@@ -1,0 +1,18 @@
+import numpy as np
+
+def solve(grid):  # grid is 9x9 np array
+    indices = list(zip(np.where(grid == 0)[0], np.where(grid == 0)[1]))
+    for index in indices:
+        i = index[0]
+        j = index[1]
+        for n in range(1, 10):  # start testing nums
+            block = grid[(i // 3) * 3:(i // 3) * 3 + 3, (j // 3) * 3:(j // 3) * 3 + 3]
+            if n not in block and n not in grid[i] and n not in grid[:, j]:
+                grid[i, j] = n
+                solve(grid)
+                grid[i, j] = 0  # executed if no solution at level directly below
+        return
+    print(grid)
+
+
+solve(grid)
