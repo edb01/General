@@ -5,16 +5,17 @@ import time
 pygame.init()
 
 
-grid = np.zeros(shape=(40, 40))
+grid = np.zeros(shape=(50, 50))
 
-blockSize = 20  # Set the size of the grid block
+blockSize = 15  # Set the size of the grid block
 window_width = grid.shape[1] * blockSize
 window_height = grid.shape[0] * blockSize
-screen = pygame.display.set_mode((window_height, window_width))
+screen = pygame.display.set_mode((window_width, window_height + 45))
 pygame.display.set_caption('Game of Life')
 
 
-def draw_grid():
+def draw_grid(gens=0):
+    screen.fill((0, 0, 0))
     for x in range(0, window_width, blockSize):
         for y in range(0, window_height, blockSize):
             rect = pygame.Rect(x, y, blockSize, blockSize)
@@ -22,38 +23,56 @@ def draw_grid():
                 color = (0, 200, 0)
                 pygame.draw.rect(screen, color, rect)
             else:
-                color = (200, 200, 200)
+                color = (255, 255, 255)
                 pygame.draw.rect(screen, color, rect, 1)
+    font = pygame.font.Font('freesansbold.ttf', 16)
+    text = font.render('Left mouse button to place cells (+shift to remove), Enter to run, C to clear/reset.',
+                       True, (200, 200, 200))
+    screen.blit(text, (0, window_height))
+    screen.blit(font.render(f'Generations:  {gens}', True, (200, 200, 200)), (0, window_height+20))
 
 
 def setup():
+    global grid
     while True:
-        screen.fill((0, 0, 0))
+        # screen.fill((0, 0, 0))
         draw_grid()
         pygame.display.update()
         for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                pos = pygame.mouse.get_pos()  # first element is x, second y
-                target = grid[pos[1]//blockSize, pos[0]//blockSize]
-                if target == 0:
-                    grid[pos[1]//blockSize, pos[0]//blockSize] = 1
-                else:
-                    grid[pos[1]//blockSize, pos[0]//blockSize] = 0
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     return
+                if event.key == pygame.K_c:
+                    grid = np.zeros(shape=(50, 50))
+            if event.type == pygame.QUIT:
+                exit()
+        m_button = pygame.mouse.get_pressed(3)
+        remove = False
+        if pygame.key.get_pressed()[pygame.K_LSHIFT] or pygame.key.get_pressed()[pygame.K_RSHIFT]:
+            remove = True
+        if m_button[0]:
+            pos = pygame.mouse.get_pos()  # first element is x, second y
+            target = grid[pos[1] // blockSize, pos[0] // blockSize]
+            if target == 0 and not remove:
+                grid[pos[1] // blockSize, pos[0] // blockSize] = 1
+            elif target == 1 and remove:
+                grid[pos[1] // blockSize, pos[0] // blockSize] = 0
 
 
 def run():
     global grid
-    draw_grid()
+    generations = 0
     while True:
         pygame.display.update()
         new_gen = grid.copy()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
-        time.sleep(1)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_c:
+                    grid = np.zeros(shape=(50, 50))
+                    generations = 0
+                    return
         for pos, cell in np.ndenumerate(grid):
             i = pos[0]
             j = pos[1]
@@ -77,15 +96,16 @@ def run():
                 elif neighbors >= 4:
                     new_gen[i, j] = 0
         grid = new_gen
-        screen.fill((0, 0, 0))
-        draw_grid()
-        # time.sleep(.0001)
+        generations += 1
+        draw_grid(generations)
+        time.sleep(.15)
 
 
-setup()
-run()
+while True:
+    setup()
+    run()
 
-# todo click and drag mouse to place/remove cells
-# todo count generations
+
+# todo allow player to pause pause run()
 # todo check when stasis achieved
-
+# todo changing colors? (fade with time)
